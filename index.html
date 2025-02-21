@@ -1,38 +1,1 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My Runner Game</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="manifest" href="manifest.json">
-</head>
-<body>
-  <canvas id="gameCanvas"></canvas>
-
-  <!-- Scoreboard overlay for game over / name submission -->
-  <div id="scoreboardOverlay">
-    <div class="overlay-content">
-      <h2>Game Over</h2>
-      <p>Your Score: <span id="finalScore"></span></p>
-      <input type="text" id="playerName" maxlength="16" placeholder="Enter your name">
-      <br>
-      <button id="submitScore">Submit Score</button>
-      <button id="playAgain" style="display:none;">Play Again</button>
-      <div id="leaderboardContainer" style="display:none;">
-        <h3>Leaderboard</h3>
-        <ul id="leaderboardList"></ul>
-      </div>
-    </div>
-  </div>
-
-  <script src="game.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log('Service Worker registered', reg))
-        .catch(err => console.error('Service Worker registration failed', err));
-    }
-  </script>
-</body>
-</html>
+<!DOCTYPE html><html lang="en"><head>  <meta charset="UTF-8">  <title>Nibbles Game - Red Panda Escape</title>  <link rel="stylesheet" href="css/styles.css"></head><body>  <canvas id="gameCanvas" width="800" height="400"></canvas>  <script src="js/main.js"></script></body></html>
