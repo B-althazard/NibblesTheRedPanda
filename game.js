@@ -1,13 +1,20 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// Use these for game logic (in CSS pixels)
+let gameWidth = window.innerWidth;
+let gameHeight = window.innerHeight;
+
 // --- Responsive Canvas Scaling ---
 function resizeCanvas() {
   let dpr = window.devicePixelRatio || 1;
-  canvas.width = window.innerWidth * dpr;
-  canvas.height = window.innerHeight * dpr;
-  canvas.style.width = window.innerWidth + 'px';
-  canvas.style.height = window.innerHeight + 'px';
+  gameWidth = window.innerWidth;
+  gameHeight = window.innerHeight;
+  canvas.width = gameWidth * dpr;
+  canvas.height = gameHeight * dpr;
+  canvas.style.width = gameWidth + "px";
+  canvas.style.height = gameHeight + "px";
+  // Reset transform so that drawing commands use CSS pixels
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 window.addEventListener('resize', resizeCanvas);
@@ -35,7 +42,7 @@ let coins = [];
 // Player object (with double jump support)
 const player = {
   x: 50,
-  y: canvas.height - 100,
+  y: gameHeight - 100, // Use gameHeight here (CSS pixels)
   width: 50,
   height: 50,
   dy: 0,
@@ -83,7 +90,7 @@ function resetGame() {
   obstacles = [];
   platforms = [];
   coins = [];
-  player.y = canvas.height - 100;
+  player.y = gameHeight - 100;
   player.dy = 0;
   player.jumpCount = 0;
   player.isJumping = false;
@@ -122,8 +129,8 @@ function isCollidingCoin(player, coin) {
 function Obstacle() {
   this.width = 20 + Math.random() * 30;
   this.height = 30 + Math.random() * 30;
-  this.x = canvas.width;
-  this.baseY = canvas.height - 50 - this.height;
+  this.x = gameWidth; // use gameWidth
+  this.baseY = gameHeight - 50 - this.height; // ground is at gameHeight - 50
   this.y = this.baseY;
   this.speed = gameSpeed;
   this.jumping = Math.random() < 0.3;
@@ -137,15 +144,17 @@ function Obstacle() {
 function Platform() {
   this.width = 100 + Math.random() * 100;
   this.height = 10;
-  this.y = canvas.height - 200 - Math.random() * 150;
-  this.x = canvas.width;
+  // y-position between gameHeight - 350 and gameHeight - 200
+  this.y = gameHeight - 200 - Math.random() * 150;
+  this.x = gameWidth;
   this.speed = gameSpeed;
 }
 // Coin constructor (collect for extra points)
 function Coin() {
   this.radius = 10;
-  this.x = canvas.width;
-  this.y = canvas.height - 250 + Math.random() * 150;
+  this.x = gameWidth;
+  // y-position between gameHeight - 400 and gameHeight - 250
+  this.y = gameHeight - 250 + Math.random() * 150;
   this.speed = gameSpeed;
 }
 
@@ -217,13 +226,13 @@ function gameLoop(timestamp) {
   let deltaTime = timestamp - lastTime;
   lastTime = timestamp;
   
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, gameWidth, gameHeight);
   
   // Update player with gravity
   player.y += player.dy;
   player.dy += player.gravity;
-  if (player.y + player.height >= canvas.height - 50) {
-    player.y = canvas.height - 50 - player.height;
+  if (player.y + player.height >= gameHeight - 50) {
+    player.y = gameHeight - 50 - player.height;
     player.dy = 0;
     player.jumpCount = 0;
     player.isJumping = false;
@@ -313,7 +322,7 @@ function gameLoop(timestamp) {
   
   // Draw ground
   ctx.fillStyle = '#888';
-  ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+  ctx.fillRect(0, gameHeight - 50, gameWidth, 50);
   
   // Draw player
   ctx.fillStyle = '#333';
