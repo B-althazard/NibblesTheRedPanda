@@ -55,6 +55,7 @@ const leaderboardContainer = document.getElementById('leaderboardContainer');
 const leaderboardList = document.getElementById('leaderboardList');
 
 // --- Event Listeners for Controls ---
+// Desktop: spacebar jump
 document.addEventListener('keydown', e => {
   if (e.code === 'Space') {
     if (!gameOver && player.jumpCount < 2) {
@@ -64,13 +65,15 @@ document.addEventListener('keydown', e => {
     }
   }
 });
-canvas.addEventListener('touchstart', e => {
+// Mobile: touchstart jump with preventDefault to avoid scrolling issues
+canvas.addEventListener('touchstart', function(e) {
+  e.preventDefault();
   if (!gameOver && player.jumpCount < 2) {
     player.dy = player.jumpStrength;
     player.isJumping = true;
     player.jumpCount++;
   }
-});
+}, { passive: false });
 
 // --- Reset Game State ---
 function resetGame() {
@@ -150,7 +153,14 @@ function Coin() {
 // Get leaderboard from localStorage (array of objects {name, score})
 function getLeaderboard() {
   let leaderboard = localStorage.getItem('leaderboard');
-  return leaderboard ? JSON.parse(leaderboard) : [];
+  try {
+    leaderboard = leaderboard ? JSON.parse(leaderboard) : [];
+  } catch (e) {
+    leaderboard = [];
+  }
+  // Filter out any invalid entries
+  leaderboard = leaderboard.filter(entry => entry && entry.name && typeof entry.score === 'number');
+  return leaderboard;
 }
 // Update leaderboard in localStorage
 function updateLeaderboard(newEntry) {
