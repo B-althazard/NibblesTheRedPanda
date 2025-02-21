@@ -1,18 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My Runner Game</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="manifest" href="manifest.json">
-</head>
 <body>
   <canvas id="gameCanvas"></canvas>
   
+  <!-- Scoreboard overlay for name entry on game over -->
+  <div id="scoreboardOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+       background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+    <div style="background:#fff; padding:20px; text-align:center; width:300px; border-radius:8px;">
+      <h2>Game Over</h2>
+      <p>Your Score: <span id="finalScore"></span></p>
+      <input type="text" id="playerName" maxlength="16" placeholder="Enter your name" style="width:90%; padding:5px;" />
+      <br/><br/>
+      <button id="submitScore" style="padding:10px 20px;">Submit & Restart</button>
+    </div>
+  </div>
+  
   <script src="game.js"></script>
   <script>
-    // Register the service worker for offline support
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').then(reg => {
         console.log('Service Worker registered', reg);
@@ -22,4 +24,3 @@
     }
   </script>
 </body>
-</html>

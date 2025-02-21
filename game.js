@@ -8,6 +8,7 @@ canvas.height = window.innerHeight;
 let gameSpeed = 5;
 let score = 0;
 let gameOver = false;
+let scoreboardShown = false; // flag to ensure the overlay shows once
 
 // Timers and intervals (in milliseconds)
 let obstacleTimer = 0;
@@ -38,11 +39,17 @@ const player = {
   isJumping: false
 };
 
+// Get scoreboard overlay elements from the DOM
+const overlay = document.getElementById('scoreboardOverlay');
+const finalScoreElement = document.getElementById('finalScore');
+const playerNameInput = document.getElementById('playerName');
+const submitScoreButton = document.getElementById('submitScore');
+
 // Keyboard input (desktop)
 document.addEventListener('keydown', e => {
   if (e.code === 'Space') {
     if (gameOver) {
-      resetGame();
+      // Wait for score submission
     } else if (player.jumpCount < 2) {
       player.dy = player.jumpStrength;
       player.isJumping = true;
@@ -54,7 +61,7 @@ document.addEventListener('keydown', e => {
 // Touch input (mobile)
 canvas.addEventListener('touchstart', e => {
   if (gameOver) {
-    resetGame();
+    // Wait for score submission
   } else if (player.jumpCount < 2) {
     player.dy = player.jumpStrength;
     player.isJumping = true;
@@ -66,6 +73,7 @@ canvas.addEventListener('touchstart', e => {
 function resetGame() {
   score = 0;
   gameOver = false;
+  scoreboardShown = false;
   obstacles = [];
   platforms = [];
   coins = [];
@@ -88,7 +96,7 @@ function isColliding(rect1, rect2) {
          rect1.y + rect1.height > rect2.y;
 }
 
-// Collision detection for coins (using their bounding box)
+// Collision detection for coins (using their bounding circle)
 function isCollidingCoin(player, coin) {
   return player.x < coin.x + coin.radius &&
          player.x + player.width > coin.x - coin.radius &&
@@ -131,6 +139,41 @@ function Coin() {
   this.y = canvas.height - 250 + Math.random() * 150;
   this.speed = gameSpeed;
 }
+
+// Leaderboard functions using localStorage (storing array of objects {name, score})
+function getLeaderboard() {
+  let leaderboard = localStorage.getItem('leaderboard');
+  return leaderboard ? JSON.parse(leaderboard) : [];
+}
+
+function updateLeaderboard(newEntry) {
+  let leaderboard = getLeaderboard();
+  leaderboard.push(newEntry);
+  leaderboard.sort((a, b) => b.score - a.score); // sort descending by score
+  leaderboard = leaderboard.slice(0, 5); // keep top 5 scores
+  localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
+}
+
+// Show scoreboard overlay for name input
+function showScoreboardOverlay() {
+  finalScoreElement.textContent = Math.floor(score);
+  overlay.style.display = 'flex';
+}
+
+// Handle score submission from overlay
+submitScoreButton.addEventListener('click', () => {
+  let name = playerNameInput.value.trim();
+  if (name === '') {
+    name = 'Anonymous';
+  }
+  // Enforce maximum of 16 characters (input already has maxlength, but double-check)
+  name = name.substring(0, 16);
+  const newEntry = { name: name, score: Math.floor(score) };
+  updateLeaderboard(newEntry);
+  overlay.style.display = 'none';
+  playerNameInput.value = '';
+  resetGame();
+});
 
 // Main game loop using timestamp for deltaTime
 function gameLoop(timestamp) {
@@ -203,7 +246,6 @@ function gameLoop(timestamp) {
     
     if (isColliding(player, obs)) {
       gameOver = true;
-      updateLeaderboard(score);
     }
     
     // Remove obstacles that have moved off-screen
@@ -255,41 +297,16 @@ function gameLoop(timestamp) {
   ctx.fillStyle = '#333';
   ctx.fillRect(player.x, player.y, player.width, player.height);
   
-  // If game over, display overlay with restart instructions and leaderboard
+  // Check for game over to display scoreboard overlay
   if (gameOver) {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#fff';
-    ctx.font = '40px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2 - 20);
-    ctx.font = '20px Arial';
-    ctx.fillText('Press Space or Tap to Restart', canvas.width / 2, canvas.height / 2 + 20);
-    
-    // Show the leaderboard
-    let leaderboard = getLeaderboard();
-    ctx.fillText('Leaderboard', canvas.width / 2, canvas.height / 2 + 60);
-    leaderboard.forEach((entry, index) => {
-      ctx.fillText((index + 1) + '. ' + entry, canvas.width / 2, canvas.height / 2 + 90 + index * 20);
-    });
-    return;
+    if (!scoreboardShown) {
+      scoreboardShown = true;
+      showScoreboardOverlay();
+    }
+    return; // Stop the game loop until the player submits their score
   }
   
   requestAnimationFrame(gameLoop);
-}
-
-// Leaderboard functions using localStorage
-function getLeaderboard() {
-  let leaderboard = localStorage.getItem('leaderboard');
-  return leaderboard ? JSON.parse(leaderboard) : [];
-}
-
-function updateLeaderboard(newScore) {
-  let leaderboard = getLeaderboard();
-  leaderboard.push(Math.floor(newScore));
-  leaderboard.sort((a, b) => b - a); // sort descending
-  leaderboard = leaderboard.slice(0, 5); // keep top 5 scores
-  localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
 }
 
 // Start the game loop
