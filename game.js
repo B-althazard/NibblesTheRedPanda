@@ -14,7 +14,6 @@ function resizeCanvas() {
   canvas.height = gameHeight * dpr;
   canvas.style.width = gameWidth + "px";
   canvas.style.height = gameHeight + "px";
-  // Reset transform so that drawing commands use CSS pixels
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 window.addEventListener('resize', resizeCanvas);
@@ -42,7 +41,7 @@ let coins = [];
 // Player object (with double jump support)
 const player = {
   x: 50,
-  y: gameHeight - 100, // Use gameHeight here (CSS pixels)
+  y: gameHeight - 100,
   width: 50,
   height: 50,
   dy: 0,
@@ -62,9 +61,10 @@ const leaderboardContainer = document.getElementById('leaderboardContainer');
 const leaderboardList = document.getElementById('leaderboardList');
 
 // --- Event Listeners for Controls ---
-// Desktop: spacebar jump
+// Desktop: spacebar jump with preventDefault to stop scrolling
 document.addEventListener('keydown', e => {
   if (e.code === 'Space') {
+    e.preventDefault();  // Prevent default scrolling behavior
     if (!gameOver && player.jumpCount < 2) {
       player.dy = player.jumpStrength;
       player.isJumping = true;
@@ -72,7 +72,7 @@ document.addEventListener('keydown', e => {
     }
   }
 });
-// Mobile: touchstart jump with preventDefault to avoid scrolling issues
+// Mobile: touchstart jump with preventDefault
 canvas.addEventListener('touchstart', function(e) {
   e.preventDefault();
   if (!gameOver && player.jumpCount < 2) {
@@ -106,6 +106,13 @@ function resetGame() {
   leaderboardContainer.style.display = 'none';
   playerNameInput.value = '';
   overlay.style.display = 'none';
+
+  // Force scroll to top in case mobile viewport shifted
+  window.scrollTo(0, 0);
+  // Also blur any active element to dismiss virtual keyboard
+  if(document.activeElement) {
+    document.activeElement.blur();
+  }
   
   requestAnimationFrame(gameLoop);
 }
@@ -129,8 +136,8 @@ function isCollidingCoin(player, coin) {
 function Obstacle() {
   this.width = 20 + Math.random() * 30;
   this.height = 30 + Math.random() * 30;
-  this.x = gameWidth; // use gameWidth
-  this.baseY = gameHeight - 50 - this.height; // ground is at gameHeight - 50
+  this.x = gameWidth;
+  this.baseY = gameHeight - 50 - this.height;
   this.y = this.baseY;
   this.speed = gameSpeed;
   this.jumping = Math.random() < 0.3;
@@ -144,7 +151,6 @@ function Obstacle() {
 function Platform() {
   this.width = 100 + Math.random() * 100;
   this.height = 10;
-  // y-position between gameHeight - 350 and gameHeight - 200
   this.y = gameHeight - 200 - Math.random() * 150;
   this.x = gameWidth;
   this.speed = gameSpeed;
@@ -153,7 +159,6 @@ function Platform() {
 function Coin() {
   this.radius = 10;
   this.x = gameWidth;
-  // y-position between gameHeight - 400 and gameHeight - 250
   this.y = gameHeight - 250 + Math.random() * 150;
   this.speed = gameSpeed;
 }
@@ -167,7 +172,6 @@ function getLeaderboard() {
   } catch (e) {
     leaderboard = [];
   }
-  // Filter out any invalid entries
   leaderboard = leaderboard.filter(entry => entry && entry.name && typeof entry.score === 'number');
   return leaderboard;
 }
@@ -213,6 +217,10 @@ submitScoreButton.addEventListener('click', () => {
   playerNameInput.style.display = 'none';
   submitScoreButton.style.display = 'none';
   playAgainButton.style.display = 'inline-block';
+  
+  // Blur input and force scroll to top (mobile fix)
+  playerNameInput.blur();
+  window.scrollTo(0, 0);
 });
 
 // Play again event listener
