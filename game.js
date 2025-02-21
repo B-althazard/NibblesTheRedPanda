@@ -84,6 +84,10 @@ canvas.addEventListener('touchstart', function(e) {
 
 // --- Reset Game State ---
 function resetGame() {
+  // Recalculate canvas dimensions to account for any viewport changes.
+  window.scrollTo(0, 0);
+  resizeCanvas(); // Ensure gameWidth and gameHeight are updated
+  
   score = 0;
   gameOver = false;
   scoreboardShown = false;
@@ -106,16 +110,15 @@ function resetGame() {
   leaderboardContainer.style.display = 'none';
   playerNameInput.value = '';
   overlay.style.display = 'none';
-
-  // Force scroll to top in case mobile viewport shifted
-  window.scrollTo(0, 0);
-  // Also blur any active element to dismiss virtual keyboard
-  if(document.activeElement) {
+  
+  // Dismiss any virtual keyboard by blurring the active element
+  if (document.activeElement) {
     document.activeElement.blur();
   }
   
   requestAnimationFrame(gameLoop);
 }
+
 
 // --- Collision Detection Functions ---
 function isColliding(rect1, rect2) {
