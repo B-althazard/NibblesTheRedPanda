@@ -1,7 +1,9 @@
+// game.js
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Use these for game logic (in CSS pixels)
+// We'll use these for game logic in CSS pixels.
 let gameWidth = window.innerWidth;
 let gameHeight = window.innerHeight;
 
@@ -19,13 +21,15 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
+// Prevent scrolling on touch devices
+document.body.style.overflow = 'hidden';
+
 // --- Game Variables ---
 let gameSpeed = 5;
 let score = 0;
 let gameOver = false;
-let scoreboardShown = false; // flag for overlay display
+let scoreboardShown = false;
 
-// Timers and intervals (in milliseconds)
 let obstacleTimer = 0;
 let obstacleInterval = 1500;
 let platformTimer = 0;
@@ -61,43 +65,44 @@ const leaderboardContainer = document.getElementById('leaderboardContainer');
 const leaderboardList = document.getElementById('leaderboardList');
 
 // --- Event Listeners for Controls ---
-// Desktop: spacebar jump with preventDefault to stop scrolling
+// Desktop: Spacebar jump (prevent default scrolling)
 document.addEventListener('keydown', e => {
   if (e.code === 'Space') {
-    e.preventDefault();  // Prevent default scrolling behavior
+    e.preventDefault();
     if (!gameOver && player.jumpCount < 2) {
       player.dy = player.jumpStrength;
-      player.isJumping = true;
       player.jumpCount++;
     }
   }
 });
-// Mobile: touchstart jump with preventDefault
-canvas.addEventListener('touchstart', function(e) {
+// Mobile: Touch jump (prevent default scrolling)
+canvas.addEventListener('touchstart', e => {
   e.preventDefault();
   if (!gameOver && player.jumpCount < 2) {
     player.dy = player.jumpStrength;
-    player.isJumping = true;
     player.jumpCount++;
   }
 }, { passive: false });
 
 // --- Reset Game State ---
 function resetGame() {
-  // Recalculate canvas dimensions to account for any viewport changes.
+  // Force recalculation of canvas dimensions
+  resizeCanvas();
   window.scrollTo(0, 0);
-  resizeCanvas(); // Ensure gameWidth and gameHeight are updated
-  
+
   score = 0;
   gameOver = false;
   scoreboardShown = false;
   obstacles = [];
   platforms = [];
   coins = [];
+  
+  // Reset player position based on current gameHeight
   player.y = gameHeight - 100;
   player.dy = 0;
   player.jumpCount = 0;
   player.isJumping = false;
+  
   obstacleTimer = 0;
   platformTimer = 0;
   coinTimer = 0;
@@ -111,14 +116,13 @@ function resetGame() {
   playerNameInput.value = '';
   overlay.style.display = 'none';
   
-  // Dismiss any virtual keyboard by blurring the active element
+  // Dismiss any virtual keyboard
   if (document.activeElement) {
     document.activeElement.blur();
   }
   
   requestAnimationFrame(gameLoop);
 }
-
 
 // --- Collision Detection Functions ---
 function isColliding(rect1, rect2) {
@@ -135,7 +139,6 @@ function isCollidingCoin(player, coin) {
 }
 
 // --- Constructors ---
-// Obstacle with optional jumping behavior
 function Obstacle() {
   this.width = 20 + Math.random() * 30;
   this.height = 30 + Math.random() * 30;
@@ -150,7 +153,7 @@ function Obstacle() {
     this.phase = 0;
   }
 }
-// Platform where the player can land
+
 function Platform() {
   this.width = 100 + Math.random() * 100;
   this.height = 10;
@@ -158,7 +161,7 @@ function Platform() {
   this.x = gameWidth;
   this.speed = gameSpeed;
 }
-// Coin constructor (collect for extra points)
+
 function Coin() {
   this.radius = 10;
   this.x = gameWidth;
@@ -167,7 +170,6 @@ function Coin() {
 }
 
 // --- Leaderboard Functions ---
-// Get leaderboard from localStorage (array of objects {name, score})
 function getLeaderboard() {
   let leaderboard = localStorage.getItem('leaderboard');
   try {
@@ -178,7 +180,6 @@ function getLeaderboard() {
   leaderboard = leaderboard.filter(entry => entry && entry.name && typeof entry.score === 'number');
   return leaderboard;
 }
-// Update leaderboard in localStorage
 function updateLeaderboard(newEntry) {
   let leaderboard = getLeaderboard();
   leaderboard.push(newEntry);
@@ -186,7 +187,6 @@ function updateLeaderboard(newEntry) {
   leaderboard = leaderboard.slice(0, 5);
   localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
 }
-// Update leaderboard UI in the overlay
 function updateLeaderboardUI() {
   let leaderboard = getLeaderboard();
   leaderboardList.innerHTML = '';
@@ -199,13 +199,11 @@ function updateLeaderboardUI() {
 }
 
 // --- Overlay Handling ---
-// Show scoreboard overlay with final score
 function showScoreboardOverlay() {
   finalScoreElement.textContent = Math.floor(score);
   overlay.style.display = 'flex';
 }
 
-// Submit score event listener
 submitScoreButton.addEventListener('click', () => {
   let name = playerNameInput.value.trim();
   if (name === '') {
@@ -216,17 +214,14 @@ submitScoreButton.addEventListener('click', () => {
   updateLeaderboard(newEntry);
   updateLeaderboardUI();
   
-  // Hide name input and submit button, show play again button
   playerNameInput.style.display = 'none';
   submitScoreButton.style.display = 'none';
   playAgainButton.style.display = 'inline-block';
   
-  // Blur input and force scroll to top (mobile fix)
   playerNameInput.blur();
   window.scrollTo(0, 0);
 });
 
-// Play again event listener
 playAgainButton.addEventListener('click', () => {
   resetGame();
 });
@@ -246,10 +241,9 @@ function gameLoop(timestamp) {
     player.y = gameHeight - 50 - player.height;
     player.dy = 0;
     player.jumpCount = 0;
-    player.isJumping = false;
   }
   
-  // Update and draw platforms
+  // Platforms
   platformTimer += deltaTime;
   if (platformTimer > platformInterval) {
     platforms.push(new Platform());
@@ -272,11 +266,10 @@ function gameLoop(timestamp) {
       player.y = plat.y - player.height;
       player.dy = 0;
       player.jumpCount = 0;
-      player.isJumping = false;
     }
   }
   
-  // Update and draw obstacles
+  // Obstacles
   obstacleTimer += deltaTime;
   if (obstacleTimer > obstacleInterval) {
     obstacles.push(new Obstacle());
@@ -300,7 +293,7 @@ function gameLoop(timestamp) {
     }
   }
   
-  // Update and draw coins
+  // Coins
   coinTimer += deltaTime;
   if (coinTimer > coinInterval) {
     coins.push(new Coin());
@@ -324,18 +317,18 @@ function gameLoop(timestamp) {
     }
   }
   
-  // Update score and draw it
+  // Score
   score += deltaTime * 0.01;
   ctx.fillStyle = '#000';
   ctx.font = '20px Arial';
   ctx.textAlign = 'left';
   ctx.fillText('Score: ' + Math.floor(score), 10, 30);
   
-  // Draw ground
+  // Ground
   ctx.fillStyle = '#888';
   ctx.fillRect(0, gameHeight - 50, gameWidth, 50);
   
-  // Draw player
+  // Player
   ctx.fillStyle = '#333';
   ctx.fillRect(player.x, player.y, player.width, player.height);
   
