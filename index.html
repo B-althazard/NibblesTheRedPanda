@@ -9,7 +9,12 @@
       <p>Your Score: <span id="finalScore"></span></p>
       <input type="text" id="playerName" maxlength="16" placeholder="Enter your name" style="width:90%; padding:5px;" />
       <br/><br/>
-      <button id="submitScore" style="padding:10px 20px;">Submit & Restart</button>
+      <button id="submitScore" style="padding:10px 20px;">Submit Score</button>
+      <button id="playAgain" style="padding:10px 20px; margin-left: 10px; display:none;">Play Again</button>
+      <div id="leaderboardContainer" style="margin-top:20px; text-align:left; max-height:150px; overflow-y:auto; display:none;">
+        <h3>Leaderboard</h3>
+        <ul id="leaderboardList" style="list-style: none; padding: 0;"></ul>
+      </div>
     </div>
   </div>
   
