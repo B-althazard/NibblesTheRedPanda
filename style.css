@@ -1,24 +1,22 @@
-/* CSS Reset & Basic Setup */
+/* Reset and basic styling */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-html,
-body {
+html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background-color: #70c5ce; /* Sky-blue background */
+    background-color: #70c5ce;
 }
 
 #gameCanvas {
     display: block;
-    image-rendering: pixelated; /* Pixel-art crispness */
+    image-rendering: pixelated;
 }
 
-/* Mobile Controls Styling */
 #mobileControls {
     position: absolute;
     bottom: 20px;
@@ -31,12 +29,10 @@ body {
 }
 
 #mobileControls button {
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0,0,0,0.5);
     color: white;
     border: none;
     padding: 15px 30px;
     border-radius: 8px;
-    font-size: 16px;
     pointer-events: all;
-    user-select: none;
 }
