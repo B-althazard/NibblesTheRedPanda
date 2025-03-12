@@ -1,11 +1,11 @@
-// Get canvas and context
+// Canvas initialization
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Pixel art settings
+// Ensure pixel art stays sharp
 ctx.imageSmoothingEnabled = false;
 
-// Resize canvas to full screen
+// Resize canvas function
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -13,7 +13,15 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-// Initialize game objects
+// Load Background Image
+const backgroundImage = new Image();
+backgroundImage.src = 'assets/background.png';
+
+// Background scroll variables
+let bgX = 0;
+const scrollSpeed = 2; // Background scroll speed (pixels per frame)
+
+// Panda object placeholder (for reference)
 const panda = {
     x: 50,
     y: 0,
@@ -26,80 +34,98 @@ const panda = {
     isDucking: false
 };
 
-// Placeholder ground height
-const groundHeight = canvas.height - 100;
-
-// Game loop
-function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw ground
-    ctx.fillStyle = "#6a994e";
-    ctx.fillRect(0, groundLevel(), canvas.width, canvas.height - groundLevel());
-
-    // Draw red panda (placeholder rectangle)
-    ctx.fillStyle = "#c44536"; // Panda color
-    ctx.fillRect(panda.x, panda.y, panda.width, panda.height);
-
-    updatePanda();
-    requestAnimationFrame(gameLoop);
-}
-
-// Game loop function
-function gameLoop() {
-    update();
-    requestAnimationFrame(gameLoop);
-}
-
-// Define ground level based on canvas size
+// Calculate ground position
 function groundLevel() {
     return canvas.height * 0.8;
 }
 
-// Update panda position (basic gravity implementation)
-function update() {
-    if (panda.y + panda.height < groundLevel()) {
-        panda.y += 5; // gravity
-    } else {
-        panda.y = groundLevel() - panda.height; // stay on ground
-    }
+// Update Panda physics (placeholder logic)
+function updatePanda() {
+    panda.dy += panda.gravity;
+    panda.y += panda.dy;
 
-    draw();
-    requestAnimationFrame(update);
-}
-
-// Jump function
-function jump() {
     if (panda.y + panda.height >= groundLevel()) {
-        panda.dy = -20; // jump strength
-    }
-}
-
-// Duck function (placeholder)
-function duck(isDucking) {
-    if (isDucking) {
-        panda.height = 25;
+        panda.y = groundLevel() - panda.height;
+        panda.dy = 0;
+        panda.isOnGround = true;
     } else {
-        panda.height = 50;
+        panda.isOnGround = false;
     }
 }
 
-// Event listeners for desktop
+// Draw Panda (temporary rectangle as placeholder)
+function drawPanda() {
+    ctx.fillStyle = "#d64045"; // Red panda color
+    ctx.fillRect(panda.x, panda.y, panda.width, panda.height);
+}
+
+// Infinite scrolling background logic
+function drawScrollingBackground() {
+    const bgWidth = canvas.height * (backgroundImage.width / backgroundImage.height);
+    const bgHeight = canvas.height;
+
+    bgX -= scrollSpeed;
+
+    if (bgX <= -bgWidth) {
+        bgX = 0;
+    }
+
+    // Draw two images side by side for seamless loop
+    ctx.drawImage(backgroundImage, bgX, 0, bgWidth, bgHeight);
+    ctx.drawImage(backgroundImage, bgX + bgWidth, 0, bgWidth, bgHeight);
+}
+
+// Main game loop
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    drawScrollingBackground();
+    updatePanda();
+    drawPanda();
+
+    requestAnimationFrame(gameLoop);
+}
+
+// Event handlers (keyboard)
 document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') jump();
-    if (e.code === 'ShiftLeft') duck(true);
+    if (e.code === 'Space' && panda.isOnGround) {
+        panda.dy = panda.jumpStrength;
+    }
+    if (e.code === 'ShiftLeft') {
+        panda.height = 30; // Ducking reduces height
+        panda.isDucking = true;
+    }
 });
+
 document.addEventListener('keyup', (e) => {
-    if (e.code === 'ShiftLeft') duck(false);
+    if (e.code === 'ShiftLeft') {
+        panda.height = 50; // Reset height after ducking
+        panda.isDucking = false;
+    }
 });
 
-// Mobile Controls
-const duckBtn = document.getElementById('duckBtn');
-const jumpBtn = document.getElementById('jumpBtn');
+// Mobile controls setup
+document.getElementById('jumpBtn').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (panda.isOnGround) {
+        panda.dy = panda.jumpStrength;
+    }
+});
 
-duckBtn.addEventListener('touchstart', () => duck(true));
-duckBtn.addEventListener('touchend', () => duck(false));
-jumpBtn.addEventListener('touchstart', jump);
+document.getElementById('duckBtn').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    panda.height = 30;
+    panda.isDucking = true;
+});
 
-// Start game loop
-setInterval(update, 1000 / 60); // 60 FPS
+document.getElementById('duckBtn').addEventListener('touchend', (e) => {
+    e.preventDefault();
+    panda.height = 50;
+    panda.isDucking = false;
+});
+
+// Start the game loop once background is loaded
+backgroundImage.onload = function() {
+    panda.y = groundLevel() - panda.height; // Initialize panda position
+    gameLoop();
+};
