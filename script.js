@@ -1,8 +1,9 @@
-// Canvas and context setup
+// Canvas setup (single declaration)
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 
+// Canvas resizing
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -10,18 +11,18 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-// Load Background Image
+// Background setup
 const backgroundImage = new Image();
 backgroundImage.src = 'assets/background.png';
-
-// Game variables
 let bgX = 0;
 const scrollSpeed = 3;
+
+// Game state
 let frameCount = 0;
 let score = 0;
 let gameRunning = true;
 
-// Panda setup
+// Panda setup (declared once)
 const panda = {
     x: 50,
     y: 0,
@@ -31,30 +32,74 @@ const panda = {
     gravity: 1.2,
     jumpStrength: -20,
     isOnGround: false,
-    isDucking: false
 };
 
-// Candles (Health system)
-const candleData = [];
+// Health Candle Chart
+const candles = [];
 const maxCandles = 20;
 let candleTimer = 0;
-const candleInterval = 1000; // 1 second per candle
+const candleInterval = 1000;
 
-// Obstacles and Coins arrays
+// Obstacles & Coins
 const obstacles = [];
 const coins = [];
 
-// Utility function: Ground Level
-function groundLevel() {
-    return canvas.height * 0.8;
+// Resize Canvas
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// Ground Level
+const groundLevel = () => canvas.height * 0.8;
+
+// Game Loop
+let lastTimestamp = performance.now();
+
+function gameLoop(timestamp) {
+    if (!gameRunning) return;
+
+    const deltaTime = timestamp - lastTimestamp;
+    lastTimestamp = timestamp;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    updateBackground();
+    updatePanda();
+    spawnObjects();
+    updateObjects();
+    checkCollisions();
+    updateCandles(deltaTime);
+
+    drawBackground();
+    drawObjects();
+    drawPanda();
+    drawCandles();
+    drawScore();
+
+    requestAnimationFrame(gameLoop);
 }
 
-// Update panda physics
+// Background update & draw
+function updateBackground() {
+    const bgWidth = canvas.height * (backgroundImage.width / backgroundImage.height);
+    bgX -= scrollSpeed / 2;
+    if (bgX <= -bgWidth) bgX = 0;
+}
+
+function drawBackground() {
+    const bgWidth = canvas.height * (backgroundImage.width / backgroundImage.height);
+    ctx.drawImage(backgroundImage, bgX, 0, bgWidth, canvas.height);
+    ctx.drawImage(backgroundImage, bgX + bgWidth, 0, bgWidth, canvas.height);
+}
+
+// Panda update & draw
 function updatePanda() {
     panda.dy += panda.gravity;
     panda.y += panda.dy;
 
-    // Ground collision
     if (panda.y + panda.height >= groundLevel()) {
         panda.y = groundLevel() - panda.height;
         panda.dy = 0;
@@ -64,161 +109,19 @@ function updatePanda() {
     }
 }
 
-// Draw Panda (placeholder rectangle)
 function drawPanda() {
-    ctx.fillStyle = "#d64045";
+    ctx.fillStyle = '#d64045';
     ctx.fillRect(panda.x, panda.y, panda.width, panda.height);
 }
 
-// Spawn Obstacles & Coins
-function spawnObjects() {
-    frameCount++;
-
-    // Obstacles every ~1.5 sec
-    if (frameCount % 90 === 0) {
-        obstacles.push({
-            x: canvas.width,
-            y: groundLevel() - 40,
-            width: 40,
-            height: 40
-        });
-    }
-
-    // Coins spawn every 120 frames
-    if (frameCount % 120 === 0) {
-        coins.push({
-            x: canvas.width,
-            y: groundLevel() - 100 - Math.random() * 100,
-            width: 20,
-            height: 20
-        });
-    }
-}
-
-// Check collisions
-function checkCollisions() {
-    // Obstacle collision
-    obstacles.forEach((obstacle, index) => {
-        if (panda.x < obstacle.x + obstacle.width &&
-            panda.x + panda.width > obstacle.x &&
-            panda.y < obstacle.y + obstacle.height &&
-            panda.y + panda.height > obstacle.y) {
-            addCandle(false); // Red candle
-            obstacles.splice(index, 1);
-        }
-    });
-
-    // Coins collection
-    coins.forEach((coin, index) => {
-        if (panda.x < coin.x + coin.width &&
-            panda.x + panda.width > coin.x &&
-            panda.y < coin.y + coin.height &&
-            panda.y + panda.height > coin.y) {
-            score++;
-            coins.splice(index, 1);
-        }
-    });
-}
-
-// Candle health logic
-function addCandle(isGreen = true) {
-    candleData.push(isGreen ? 'green' : 'red');
-    if (candleData.length > maxCandles) candleData.shift();
-
-    const redCandles = candleData.filter(c => c === 'red').length;
-    if (redCandles >= maxCandles) {
-        gameRunning = false;
-        alert(`Game Over! Coins collected: ${score}`);
-    }
-}
-
-// Draw Candles
-function drawCandles() {
-    const candleWidth = 10;
-    const spacing = 4;
-    const startX = canvas.width - (maxCandles * (candleWidth + candleSpacing)) - 20;
-    const startY = 20;
-
-    candleData.forEach((color, index) => {
-        ctx.fillStyle = color === 'green' ? '#4caf50' : '#f44336';
-        ctx.fillRect(
-            startX + index * (candleWidth + candleSpacing),
-            startY,
-            candleWidth,
-            30
-        );
-    });
-}
-
-// Main game loop
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-ctx.imageSmoothingEnabled = false;
-
-let lastTime = performance.now();
-
-function gameLoop(currentTime) {
-    if (!gameRunning) return;
-
-    const deltaTime = currentTime - lastTime;
-    lastTime = currentTime;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Scroll background
-    const bgWidth = canvas.height * (backgroundImage.width / backgroundImage.height);
-    bgX -= scrollSpeed / 2;
-    if (bgX <= -bgWidth) bgX = 0;
-    ctx.drawImage(backgroundImage, bgX, 0, bgWidth, canvas.height);
-    ctx.drawImage(backgroundImage, bgX + bgWidth, 0, bgWidth, canvas.height);
-
-    updatePanda();
-    drawPanda();
-
-    spawnObjects();
-    updateObjects();
-    drawObjects();
-
-    checkCollisions();
-
-    // Candle timer
-    candleTimer += deltaTime;
-    if (candleTimer >= candleInterval) {
-        addCandle(true); // Green candle every second survived
-        candleTimer = 0;
-    }
-
-    drawCandles();
-
-    // Display Score
-    ctx.fillStyle = 'white';
-    ctx.font = '20px Arial';
-    ctx.fillText(`Coins: ${score}`, 20, 30);
-
-    requestAnimationFrame(gameLoop);
-}
-
-// Event listeners
-document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && panda.isOnGround) panda.dy = panda.jumpStrength;
-});
-
-document.getElementById('jumpBtn').addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    if (panda.isOnGround) panda.dy = panda.jumpStrength;
-});
-
-document.getElementById('duckBtn').addEventListener('touchstart', () => panda.height = 30);
-document.getElementById('duckBtn').addEventListener('touchend', () => panda.height = 50);
-
-// Update Obstacles and Coins
+// Spawn objects (obstacles & coins)
 function spawnObjects() {
     frameCount++;
     if (frameCount % 90 === 0) {
         obstacles.push({ x: canvas.width, y: groundLevel() - 40, width: 40, height: 40 });
     }
     if (frameCount % 120 === 0) {
-        coins.push({ x: canvas.width, y: groundLevel() - 100 - Math.random() * 50, width: 20, height: 20 });
+        coins.push({ x: canvas.width, y: groundLevel() - 150 - Math.random() * 100, width: 20, height: 20 });
     }
 }
 
@@ -234,19 +137,81 @@ function updateObjects() {
 }
 
 function drawObjects() {
-    obstacles.forEach(o => {
-        ctx.fillStyle = "#222";
-        ctx.fillRect(o.x, o.y, o.width, o.height);
+    ctx.fillStyle = 'black';
+    obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.width, o.height));
+
+    ctx.fillStyle = 'yellow';
+    coins.forEach(c => ctx.fillRect(c.x, c.y, c.width, c.height));
+}
+
+// Collision detection
+function checkCollisions() {
+    obstacles.forEach((o, i) => {
+        if (panda.x < o.x + o.width && panda.x + panda.width > o.x &&
+            panda.y < o.y + o.height && panda.y + panda.height > o.y) {
+            addCandle(false);
+            obstacles.splice(i, 1);
+        }
     });
-    coins.forEach((c) => {
-        ctx.fillStyle = "yellow";
-        ctx.fillRect(c.x, c.y, c.width, c.height);
+
+    coins.forEach((c, i) => {
+        if (panda.x < c.x + c.width && panda.x + panda.width > c.x &&
+            panda.y < c.y + c.height && panda.y + panda.height > c.y) {
+            score++;
+            coins.splice(i, 1);
+        }
     });
 }
 
-// Start game after background loads
-backgroundImage.onload = () => {
+// Health Candle logic
+function updateCandles(deltaTime) {
+    candleTimer += deltaTime;
+    if (candleTimer >= candleInterval) {
+        addCandle(true);
+        candleTimer -= candleInterval;
+    }
+}
+
+function addCandle(isGreen) {
+    candles.push(isGreen ? 'green' : 'red');
+    if (candles.length > maxCandles) candles.shift();
+
+    if (candles.filter(c => c === 'red').length >= maxCandles) {
+        gameRunning = false;
+        alert(`Game Over! Coins collected: ${score}`);
+    }
+}
+
+function drawCandles() {
+    const candleWidth = 10, spacing = 4;
+    const x = canvas.width - (maxCandles * (candleWidth + spacing)) - 20;
+    const y = 20;
+
+    candles.forEach((color, i) => {
+        ctx.fillStyle = color === 'green' ? '#4caf50' : '#f44336';
+        ctx.fillRect(x + i * (candleWidth + candleSpacing), y, candleWidth, 30);
+    });
+}
+
+// Score Display
+function drawScore() {
+    ctx.fillStyle = 'white';
+    ctx.font = '20px Arial';
+    ctx.fillText(`Coins: ${score}`, 20, 30);
+}
+
+// Controls
+document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && panda.isOnGround) panda.dy = panda.jumpStrength;
+});
+
+document.getElementById('jumpBtn').addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (panda.isOnGround) panda.dy = panda.jumpStrength;
+});
+
+// Start the game after loading background
+backgroundImage.onload = function() {
     panda.y = groundLevel() - panda.height;
-    lastTime = performance.now();
     requestAnimationFrame(gameLoop);
 };
