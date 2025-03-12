@@ -1,10 +1,8 @@
-// Canvas initialization
+// Canvas setup
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-
 ctx.imageSmoothingEnabled = false;
 
-// Canvas resizing
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -12,193 +10,219 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-// Background setup
+// Load background image
 const backgroundImage = new Image();
 backgroundImage.src = 'assets/background.png';
 
 let bgX = 0;
 const scrollSpeed = 3;
 
-// Character (Red Panda) setup
+// Panda setup
 const panda = {
     x: 50,
     y: 0,
     width: 50,
     height: 50,
     dy: 0,
-    gravity: 0.8,
-    jumpStrength: -18,
+    gravity: 1.2,
     isOnGround: false,
-    isDucking: false
 };
 
-// Ground level
 const groundLevel = () => canvas.height * 0.8;
 
-// Platform and Obstacle arrays
-const platforms = [];
-const obstacles = [];
-let frameCount = 0;
+// Health Candle Chart setup
+let candleData = [];
+const maxCandles = 20; // Maximum number of candles
+let candleTimer = 0;
+const candleInterval = 1000; // One candle per second
 
-// Platform and Obstacle spawning
-function spawnPlatformsAndObstacles() {
+// Platforms, Obstacles, Coins
+const obstacles = [];
+const coins = [];
+let frameCount = 0;
+let gameRunning = true;
+
+// Points for collision detection
+function isColliding(a, b) {
+    return (a.x < b.x + b.width && a.x + a.width > b.x &&
+            a.y < b.y + b.height && a.y + a.height > b.y);
+}
+
+// Draw Candle Chart
+function drawCandles() {
+    const candleWidth = 10;
+    const candleSpacing = 4;
+    const chartX = canvas.width - (maxCandles * (candleWidth + candleSpacing)) - 20;
+    const chartY = 20;
+
+    candleData.forEach((candle, index) => {
+        ctx.fillStyle = candle > 0 ? '#4caf50' : '#ff4c4c'; // Green or red candle
+        const candleHeight = Math.abs(candle) * 5;
+
+        ctx.fillRect(
+            chartX + index * (candleWidth + candleSpacing),
+            chartY,
+            candleWidth,
+            candleHeight
+        );
+    });
+}
+
+// Spawn obstacles and coins
+function spawnObjects() {
     frameCount++;
 
-    // Spawn platform randomly every 120 frames (~2 seconds at 60fps)
-    if (frameCount % 120 === 0) {
-        const platformWidth = 100 + Math.random() * 100;
-        const platformHeight = 20;
-        const platformY = groundLevel() - 150 - Math.random() * 100;
-
-        platforms.push({
+    if (frameCount % 90 === 0) {
+        obstacles.push({
             x: canvas.width,
-            y: platformY,
-            width: platformWidth,
-            height: platformHeight
+            y: groundLevel() - 40,
+            width: 40,
+            height: 40,
         });
     }
 
-    // Spawn obstacle randomly every 90 frames (~1.5 seconds)
-    if (frameCount % 90 === 0) {
-        const obstacleSize = 40 + Math.random() * 20;
-        obstacles.push({
+    if (frameCount % 120 === 0) {
+        coins.push({
             x: canvas.width,
-            y: groundLevel() - obstacleSize,
-            width: obstacleSize,
-            height: obstacleSize
+            y: groundLevel() - 100 - Math.random() * 150,
+            width: 20,
+            height: 20
         });
     }
 }
 
-// Update positions of platforms and obstacles
-function updatePlatformsAndObstacles() {
-    platforms.forEach((platform, i) => {
-        platform.x -= scrollSpeed;
-        if (platform.x + platform.width < 0) {
-            platforms.splice(i, 1);
-        }
-    });
-
+// Handle collisions
+function checkCollisions() {
+    // Obstacles collision
     obstacles.forEach((obstacle, i) => {
-        obstacle.x -= scrollSpeed;
-        if (obstacle.x + obstacle.width < 0) {
+        if (panda.x < obstacle.x + obstacle.width &&
+            panda.x + panda.width > obstacle.x &&
+            panda.y < obstacle.y + obstacle.height &&
+            panda.y + panda.height > obstacle.y) {
+            // Collision with enemy
+            addCandle(false); // red candle
             obstacles.splice(i, 1);
         }
     });
-}
 
-// Draw platforms and obstacles
-function drawPlatformsAndObstacles() {
-    ctx.fillStyle = '#8d5524'; // Brown for platforms
-    platforms.forEach(platform => {
-        ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-    });
-
-    ctx.fillStyle = '#000000'; // Black for obstacles
-    obstacles.forEach(obstacle => {
-        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+    // Coins collection
+    coins.forEach((coin, i) => {
+        if (panda.x < coin.x + coin.width &&
+            panda.x + panda.width > coin.x &&
+            panda.y < coin.y + coin.height &&
+            panda.y + panda.height > coin.y) {
+            score += 1;
+            coins.splice(i, 1);
+        }
     });
 }
 
-// Panda physics and collision
+// Panda physics update
 function updatePanda() {
     panda.dy += panda.gravity;
     panda.y += panda.dy;
 
-    // Ground collision
     if (panda.y + panda.height >= groundLevel()) {
         panda.y = groundLevel() - panda.height;
         panda.dy = 0;
         panda.isOnGround = true;
-    } else {
-        panda.isOnGround = false;
     }
+}
 
-    // Platform collision
-    platforms.forEach(platform => {
-        if (panda.x < platform.x + platform.width &&
-            panda.x + panda.width > platform.x &&
-            panda.y + panda.height <= platform.y + panda.dy &&
-            panda.y + panda.height + panda.dy >= platform.y) {
-                panda.y = platform.y - panda.height;
-                panda.dy = 0;
-                panda.isOnGround = true;
+// Ground level calculation
+function groundLevel() {
+    return canvas.height * 0.8;
+}
+
+// Health candle logic
+function updateCandles(deltaTime) {
+    candleTimer += deltaTime;
+    if (candleTimer >= candleInterval) {
+        candleTimer = 0;
+        if (candleData.length >= maxCandles) {
+            candleData.shift();
         }
-    });
+        candleData.push({ color: 'green' });
+    }
 }
 
-// Draw Panda
-function drawPanda() {
-    ctx.fillStyle = '#d64045';
-    ctx.fillRect(panda.x, panda.y, panda.width, panda.height);
+// Lose health (red candle)
+function loseHealth() {
+    candleData.push({ color: 'red' });
+    if (candleData.length > maxCandles) candleData.shift();
+    if (candleData.filter(c => c === 'red').length >= maxCandles) {
+        gameRunning = false; // Game Over condition
+        alert('Game Over!'); // Simple game over alert
+    }
 }
 
-// Scrolling Background
-function drawScrollingBackground() {
-    const bgWidth = canvas.height * (backgroundImage.width / backgroundImage.height);
-    const bgHeight = canvas.height;
+// Main game loop
+let lastTime = performance.now();
+let gameRunning = true;
+let score = 0;
 
-    bgX -= scrollSpeed / 2;
+function gameLoop(timestamp) {
+    if (!gameRunning) return;
 
-    if (bgX <= -bgWidth) bgX = 0;
+    const deltaTime = timestamp - lastTime;
+    lastTime = timestamp;
 
-    ctx.drawImage(backgroundImage, bgX, 0, bgWidth, bgHeight);
-    ctx.drawImage(backgroundImage, bgX + bgWidth, 0, bgWidth, bgHeight);
-}
-
-// Main Game Loop
-function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    drawScrollingBackground();
+    // Background scrolling
+    bgX -= scrollSpeed / 2;
+    const bgWidth = canvas.height * (backgroundImage.width / backgroundImage.height);
+    ctx.drawImage(backgroundImage, bgX, 0, bgWidth, canvas.height);
+    ctx.drawImage(backgroundImage, bgX + bgWidth, 0, bgWidth, canvas.height);
+    if (bgX <= -bgWidth) bgX = 0;
 
-    spawnPlatformsAndObstacles();
-    updatePlatformsAndObstacles();
-    drawPlatformsAndObstacles();
+    spawnObjects();
 
+    // Update and draw obstacles
+    obstacles.forEach(o => {
+        o.x -= scrollSpeed;
+        ctx.fillStyle = 'black';
+        ctx.fillRect(o.x, o.y, o.width, o.height);
+    });
+
+    // Update and draw coins
+    coins.forEach(c => {
+        c.x -= scrollSpeed;
+        ctx.fillStyle = 'yellow';
+        ctx.fillRect(c.x, c.y, c.width, c.height);
+    });
+
+    checkCollisions();
     updatePanda();
-    drawPanda();
+    updateCandles(deltaTime);
+    drawCandles();
+
+    // Draw panda
+    ctx.fillStyle = '#d64045';
+    ctx.fillRect(panda.x, panda.y, panda.width, panda.height);
+
+    // Draw Score
+    ctx.fillStyle = '#fff';
+    ctx.font = '20px Arial';
+    ctx.fillText(`Coins: ${score}`, 20, 30);
 
     requestAnimationFrame(gameLoop);
 }
 
 // Controls
-document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && panda.isOnGround) {
-        panda.dy = panda.jumpStrength;
-    }
-    if (e.code === 'ShiftLeft') {
-        panda.height = 30;
-        panda.isDucking = true;
-    }
+document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && panda.isOnGround) panda.dy = panda.jumpStrength;
 });
 
-document.addEventListener('keyup', (e) => {
-    if (e.code === 'ShiftLeft') {
-        panda.height = 50;
-        panda.isDucking = false;
-    }
-});
-
-document.getElementById('jumpBtn').addEventListener('touchstart', (e) => {
+document.getElementById('jumpBtn').addEventListener('touchstart', e => {
     e.preventDefault();
     if (panda.isOnGround) panda.dy = panda.jumpStrength;
 });
 
-document.getElementById('duckBtn').addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    panda.height = 30;
-    panda.isDucking = true;
-});
-
-document.getElementById('duckBtn').addEventListener('touchend', (e) => {
-    e.preventDefault();
-    panda.height = 50;
-    panda.isDucking = false;
-});
-
-// Start Game
-backgroundImage.onload = function() {
+// Game start
+backgroundImage.onload = () => {
     panda.y = groundLevel() - panda.height;
-    gameLoop();
+    candleData = [];
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
 };
