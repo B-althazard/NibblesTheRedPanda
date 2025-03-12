@@ -1,0 +1,42 @@
+/* Reset default margins and padding */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #70c5ce; /* Sky blue background suitable for pixel art */
+}
+
+/* Canvas setup */
+#gameCanvas {
+    display: block;
+    image-rendering: pixelated; /* Ensures sharp pixel art visuals */
+}
+
+/* Mobile controls container */
+#mobileControls {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    user-select: none;
+}
+
+/* Mobile control buttons */
+#mobileControls button {
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-size: 16px;
+    pointer-events: auto;
+}

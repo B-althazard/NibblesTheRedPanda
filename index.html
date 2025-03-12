@@ -1,16 +1,21 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <style>
-      canvas {
-        width: 800px;
-        height: 600px;
-        background-color: #f0f0f0;
-      }
-    </style>
-  </head>
-  <body>
-    <canvas id="game"></canvas>
-    <script src="game.js"></script>
-  </body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, orientation=landscape">
+    <title>Red Panda Side-Scrolling Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Mobile Control Buttons -->
+    <div id="mobileControls">
+        <button id="duckBtn">Duck</button>
+        <button id="jumpBtn">Jump</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
 </html>
